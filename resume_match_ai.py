@@ -33,6 +33,10 @@ def send_email(subject, body, sender_email, sender_pass):
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
         smtp.login(sender_email, sender_pass)
         smtp.send_message(msg)
+        
+from openai import OpenAI
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # Set once globally if you prefer
 
 def get_match_score(jd, resume_text):
     prompt = f"""
@@ -47,13 +51,14 @@ Resume:
 Return this in JSON:
 {{"score": <0-100>, "explanation": "...", "suggestions": "..."}}
 """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2
     )
     result = eval(response.choices[0].message.content)
     return result
+
 
 # -------------------- UI --------------------
 st.title("🎯 ResumeMatchAI for Recruiters")

@@ -1,0 +1,4 @@
+streamlit
+openai
+docx2txt
+PyMuPDF

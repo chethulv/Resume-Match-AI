@@ -42,6 +42,8 @@ def send_email(subject, body, sender_email, sender_pass):
         st.error(f"Failed to send email: {e}")
 
 def get_match_score(jd, resume_text):
+    resume_text = resume_text[:3000]  # Truncate to prevent token overflow
+
     prompt = f"""
 You are an expert technical recruiter. Given the following job description and resume, score how well the resume matches the job out of 100. Also provide a short explanation and improvement suggestions.
 
@@ -55,11 +57,11 @@ Return this in JSON:
 {{"score": <0-100>, "explanation": "...", "suggestions": "..."}}
 """
     if len(prompt) > 12000:
-        prompt = prompt[:12000]  # Trim long input to avoid token limit errors
+        prompt = prompt[:12000]
 
     try:
         response: ChatCompletion = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
@@ -70,29 +72,29 @@ Return this in JSON:
         return {"score": 0, "explanation": "Unable to evaluate.", "suggestions": "Please retry or check input."}
 
 # -------------------- UI --------------------
-st.title("\U0001F3AF ResumeMatchAI for Recruiters")
+st.title("🎯 ResumeMatchAI for Recruiters")
 st.write("Upload a job description and multiple resumes. We'll rank them using AI.")
 
 # Job Description
-job_description = st.text_area("\U0001F4C4 Paste Job Description", height=250)
+job_description = st.text_area("📄 Paste Job Description", height=250)
 
 # Resume Upload
-uploaded_files = st.file_uploader("\U0001F4C2 Upload Resumes (.pdf or .docx)", accept_multiple_files=True)
+uploaded_files = st.file_uploader("📂 Upload Resumes (.pdf or .docx)", accept_multiple_files=True)
 
 # Optional API Key Input
 if "OPENAI_API_KEY" not in st.secrets:
-    user_api_key = st.text_input("\U0001F511 Enter your OpenAI API key", type="password")
+    user_api_key = st.text_input("🔐 Enter your OpenAI API key", type="password")
     client = OpenAI(api_key=user_api_key)
 
 # Email Credentials
 st.divider()
-st.subheader("\U0001F4E8 Feedback Form")
+st.subheader("📧 Feedback Form")
 with st.form("feedback_form"):
     feedback_name = st.text_input("Your Name")
     feedback_email = st.text_input("Your Email")
     feedback_message = st.text_area("Your Feedback", height=100)
-    sender_email = st.text_input("\U0001F4E7 Your Gmail address to send feedback", type="default")
-    sender_pass = st.text_input("\U0001F510 App password (Gmail App Password)", type="password")
+    sender_email = st.text_input("📧 Your Gmail address to send feedback", type="default")
+    sender_pass = st.text_input("🔐 App password (Gmail App Password)", type="password")
     submit_feedback = st.form_submit_button("Send Feedback")
 
     if submit_feedback:
@@ -100,13 +102,13 @@ with st.form("feedback_form"):
             subject = f"ResumeMatchAI Feedback from {feedback_name}"
             body = f"From: {feedback_name} ({feedback_email})\n\n{feedback_message}"
             send_email(subject, body, sender_email, sender_pass)
-            st.success("\u2705 Feedback sent successfully!")
+            st.success("✅ Feedback sent successfully!")
         else:
-            st.error("\u274C All fields are required for sending feedback.")
+            st.error("❌ All fields are required for sending feedback.")
 
 # Resume Matching
 st.divider()
-if st.button("\U0001F680 Match Resumes to Job Description") and job_description and uploaded_files:
+if st.button("🚀 Match Resumes to Job Description") and job_description and uploaded_files:
     results = []
     with st.spinner("Processing resumes..."):
         for file in uploaded_files:
@@ -120,7 +122,7 @@ if st.button("\U0001F680 Match Resumes to Job Description") and job_description 
     if results:
         sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
         for name, score, explanation, suggestions in sorted_results:
-            st.markdown(f"### \U0001F4CC {name}")
+            st.markdown(f"### 📌 {name}")
             st.write(f"**Score:** {score}/100")
             st.write(f"**Explanation:** {explanation}")
             st.write(f"**Suggestions:** {suggestions}")
